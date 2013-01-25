@@ -2,16 +2,42 @@ var startx = 0;
 var starty = 0;
 var canvas = document.getElementById('drawing');
 var ctx = canvas.getContext('2d');
+var colors = "red;orange;yellow;green;blue;indigo;purple;black;white".split(';');
+var brush_color = 'black';
+var brush_width = '';
 // 0 聊天内容
 // 1 画布数据
 $(function() {
-    "use strict";
- 
+ 	var sb = [];
+	for(var i in colors){
+		sb.push('<span class="brush_color" style="float:left;background-color:'+colors[i]+';">&nbsp;</span>');
+	}
+
+	$('#option').append(sb);
+	$('#option .brush_color').click(function(){
+			$('#option .brush_color').removeClass('active');
+			$(this).addClass('active');
+			brush_color = $(this).css('background-color');
+			//alert(brush_color);
+	});
+
+	var bw = [];
+	for(var i = 3; i < 12 ; i++){
+		bw.push('<span class="brush_width" style="float:left;background-color:black;width:'+i+'px;height:'+i+'px;margin-top:'+ (13 - i/2) +'px;">&nbsp;</span>');
+	}
+	$('#option').append(bw);
+	$('#option .brush_width').click(function(){
+			$('#option .brush_width').removeClass('active');
+			$(this).addClass('active');
+			brush_width = parseInt($(this).css('width'));
+			//alert(brush_width);
+		});
+
+	//#################################################
     // for better performance - to avoid searching in DOM
     var content = $('#content');
     var input = $('#input');
     var status = $('#status');
- 
     // my color assigned by the server
     var myColor = false;
     // my name sent to the server
@@ -45,7 +71,7 @@ $(function() {
  
     // most important part - incoming messages
     connection.onmessage = function (message) {
-        // try to parse JSON message. Because we know that the server always returns
+        // try to parse JSON messagne. Because we know that the server always returns
         // JSON this should work without any problem but we should make sure that
         // the massage is not chunked or otherwise damaged.
         try {
@@ -57,7 +83,7 @@ $(function() {
         }	
  
         // NOTE: if you're not sure about the JSON structure
-        // check the server source code above
+        // check the server source ncode above
 		//alert(JSON.stringify(json));
         if (json.type === 'color') { // first response from the server with user's color
             myColor = json.data;
@@ -66,7 +92,7 @@ $(function() {
             // from now user can start sending messages
         } else if (json.type === 'history') { // entire message history
             // insert every single message to the chat window
-            for (var i=0; i < json.data.length; i++) {
+            for (var i=0; i < json.ndata.length; i++) {
                 addMessage(json.data[i].author, json.data[i].text,
                            json.data[i].color, new Date(json.data[i].time));
             }
@@ -79,7 +105,8 @@ $(function() {
 			var canvas = document.getElementById('drawing');
 			var ctx = canvas.getContext('2d');
 			ctx.beginPath();
-			ctx.strokeStyle = '#444';
+			ctx.strokeStyle = json.data.brush_color;
+			ctx.lineWidth = json.data.brush_width;
 			ctx.moveTo(json.data.startx, json.data.starty);
 			ctx.lineTo(json.data.mousex, json.data.mousey);
 			ctx.stroke();
@@ -138,6 +165,7 @@ $(function() {
         content.append('<p><span style="color:' + color + '">' + author + '</span> @ ' +
              + (dt.getHours() < 10 ? '0' + dt.getHours() : dt.getHours()) + ':'
              + (dt.getMinutes() < 10 ? '0' + dt.getMinutes() : dt.getMinutes())
+ 
              + ': ' + message + '</p>');
     }
 
@@ -155,28 +183,29 @@ function draw(){
 			 starty = event.clientY;
 			ctx.beginPath();
 			ctx.moveTo(startx, starty);
-			drawline(ctx, startx, starty);
 			isDrawing = true;
 		});
 	
 	$('#drawing').mousemove(function(e){
-				ctx.stroke();
 			if(isDrawing){
 				var $this = $(this);
 				var timer;
 				var mousex = e.pageX-$(this).position().left;
 				var mousey = e.pageY-$(this).position().top;
 		
-				ctx.strokeStyle = '#444';
-	
+				ctx.strokeStyle = brush_color;
+				ctx.lineWidth = brush_width;
 				ctx.lineTo(e.pageX-$(this).position().left,e.pageY-$(this).position().top);
 				ctx.stroke();
+
 				var data = {};
 				data.dataType = 1;
 				data.startx = startx;
 				data.starty = starty;
 				data.mousex = mousex;
 				data.mousey = mousey;
+				data.brush_color = brush_color;
+				data.brush_width = brush_width;
 				//$('#content').text(JSON.stringify(data));
 				connection.send(JSON.stringify(data));
 				startx = mousex;
@@ -198,9 +227,9 @@ function loop(){
 	
 }
 
-function drawline(ctx, x1, y1, x2, y2,thickness){
+function drawline(ctx, x1, y1, x2, y2,thickness,brush_color){
 	ctx.lineTo(x2, y2);
 	ctx.lineWidth = thickness;
-	ctx.strokeStyle = '#444';
+	ctx.strokeStyle = brush_color;
 }
 

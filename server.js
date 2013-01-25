@@ -124,7 +124,9 @@ wsServer.on('request', function(request) {
 						starty: data.starty,
 						mousex: data.mousex,
 						mousey: data.mousey,
-                   		author: userName
+                   		author: userName,
+						brush_color: data.brush_color,
+						brush_width: data.brush_width
            
                		 };
  
